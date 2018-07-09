@@ -31,9 +31,11 @@
 #include <cstdint>
 #include <cstring>
 
+#include "config.hpp"
 #include "L0_LowLevel/LPC40xx.h"
 #include "L0_LowLevel/uart0.min.hpp"
 #include "L2_Utilities/macros.hpp"
+#include "newlib/backtrace.hpp"
 
 // The entry point for the C++ library startup
 extern "C"
@@ -303,6 +305,7 @@ void NMI_Handler(void)
 SJ2_SECTION(".after_vectors")
 void HardFault_Handler(void)
 {
+    print_trace();
     while (1) { continue; }
 }
 

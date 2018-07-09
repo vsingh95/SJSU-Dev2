@@ -32,3 +32,12 @@ static_assert(
 #else
 #define SJ2_RTOS_FREQUENCY 1'000
 #endif // defined SJ2_RTOS_FREQUENCY
+
+// Used to dump all the call stack when a fault of sorts occurs
+// Disable this to omit getting these logs and reduce the binary size by ~5kB.
+#if defined INCLUDE_BACKTRACE_DUMP
+static_assert(INCLUDE_BACKTRACE_DUMP == false || INCLUDE_BACKTRACE_DUMP == true,
+    "INCLUDE_BACKTRACE_DUMP can only be true or false.");
+#else
+#define INCLUDE_BACKTRACE_DUMP true
+#endif // defined SJ2_RTOS_FREQUENCY

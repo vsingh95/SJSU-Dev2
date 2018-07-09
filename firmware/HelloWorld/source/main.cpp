@@ -28,11 +28,21 @@ int main(void)
     fputs("Enter wait cycles for led animation: ", stdout);
     scanf("%lu", &cycles);
     DEBUG_PRINT("Toggling LEDs...\n");
+    DEBUG_PRINT("Printing Call Stack for the lols...\n");
+    print_trace();
+
+    int value = 0;
 
     while (1)
     {
         for (uint32_t i = 0; i < cycles; i++) { continue; }
         LPC_GPIO1->PIN ^= 0b0001'0000'0010;
+        value += 1;
+        if(value > 20)
+        {
+            int * test = reinterpret_cast<int *>(0xFFFFFFFF);
+            *test = 0;
+        }
     }
     return 0;
 }
