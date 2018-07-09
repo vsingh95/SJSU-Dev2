@@ -28,3 +28,6 @@ matrix:
             - cd ./firmware/HelloWorld/
             - source env.sh
             - make presubmit HOST_CPPC=g++-8 HOST_CC=gcc-8
+after_success:
+  - rm build/binaries/firmware.lst
+  - bash <(curl -s https://codecov.io/bash)

@@ -346,7 +346,6 @@ lint:
 
 test: $(COVERAGE) $(TEST_EXEC)
 	@valgrind --leak-check=full --track-origins=yes -v $(TEST_EXEC) -s
-	# @./$(TEST_EXEC)
 	@gcovr --root $(FIRMWARE) --object-directory $(BUILD_DIR) \
 	-e "$(LIB_DIR)/newlib" \
 	-e "$(LIB_DIR)/third_party" \
@@ -357,7 +356,6 @@ test-all: $(COVERAGE) $(TEST_EXEC)
 $(COVERAGE):
 	mkdir -p $(COVERAGE)
 
-# $(TEST_EXEC):
 $(TEST_EXEC): $(TEST_FRAMEWORK) $(OBJECT_FILES)
 	@echo " \\──────────────────────────────/"
 	@echo "  \\ Generating test executable /"
