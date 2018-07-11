@@ -55,6 +55,7 @@ class PinConfigure : public PinConfigureInterface
         kOpenDrain           = 10,
         kDacEnable           = 16
     };
+
     SJ2_PACKED(struct) PinMap_t
     {
         using pin_config_register_t = uint32_t;
@@ -74,6 +75,13 @@ class PinConfigure : public PinConfigureInterface
                       "For port 5, the pin number must be equal to or below 4");
         return PinConfigure(port, pin);
     }
+    // Pin P5.4 is not featured on the LPC4078, thus setting a pin to it should
+    // have no effect.
+    static constexpr PinConfigure CreateInactivePin()
+    {
+        return PinConfigure(5, 4);
+    }
+
     constexpr PinConfigure(const uint8_t _port, const uint8_t _pin)
         : port(_port), pin(_pin)
     {
