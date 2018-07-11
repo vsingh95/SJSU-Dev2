@@ -157,11 +157,11 @@ class PinConfigure : public PinConfigureInterface
         target |= (value & mask) << position;
         return target;
     }
-    const uint8_t getPort()
+    uint8_t getPort()
     {
         return port;
     }
-    const uint8_t setPin()
+    uint8_t setPin()
     {
         return pin;
     }
