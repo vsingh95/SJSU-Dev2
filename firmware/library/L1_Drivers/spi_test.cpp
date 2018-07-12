@@ -14,23 +14,42 @@ TEST_CASE("Testing Spi Dependency Injection", "[spi]")
     LPC_IOCON_TypeDef local_iocon;
 
     // Substitute the memory mapped LPC_IOCON with the local_iocon test struture
-    // Redirects manipulation to the 'local_iocon'
-    PinConfigure::pin_map =
+    // Redirects mahttps://www.ebay.com/itm/70A-100V-48-72v-DC-motor-PWM-Speed-Controller-Reversible-H-bridge-RS232-Arduino-/172809743253on to the 'local_iocon'
+    PinConfigure::phttps://www.ebay.com/itm/70A-100V-48-72v-DC-motor-PWM-Speed-Controller-Reversible-H-bridge-RS232-Arduino-/172809743253
         reinterpret_cast<PinConfigure::PinMap_t *>(&local_iocon);
 
-    PinConfigure a = PinConfigure::CreateInactivePin();
-    PinConfigure b = PinConfigure::CreateInactivePin();
-    PinConfigure c = PinConfigure::CreateInactivePin();
+    // PinConfigure a = PinConfigure::CreateInactivePin();
+    // PinConfigure b = PinConfigure::CreateInactivePin();
+    // PinConfigure c = PinConfigure::CreateInactivePin();
+    // Instantiate a mock object.
+    Mock<PinConfigureInterface> mock_mosi;
+    Mock<PinConfigureInterface> mock_miso;
+    Mock<PinConfigureInterface> mock_sck;
 
-    Spi test_subject(a, b, c);
+    // Setup mock behavior.
+    Fake(Method(mock_mosi, EnableFastMode));
+    Fake(Method(mock_mosi, SetPinFunction));
+    Fake(Method(mock_miso, EnableFastMode));
+    Fake(Method(mock_miso, SetPinFunction));
+    Fake(Method(mock_sck, EnableFastMode));
+    Fake(Method(mock_sck, SetPinFunction));
+
+    // Fetch the mock instance.
+    PinConfigureInterface &mosi = mock_mosi.get();
+    PinConfigureInterface &miso = mock_miso.get();
+    PinConfigureInterface &sck = mock_sck.get();
+
+    Spi test_subject(mosi, miso, sck);
 
     SECTION("Test Pin Function")
     {
-        // Source: "UM10562 LPC408x/407x User manual" table 84 page 133
-        constexpr uint8_t kP0_0_U3_TXD = 0b010;
-        constexpr uint8_t kP2_5_PWM1_6 = 0b001;
-
         test_subject.Init();
-        // CHECK((local_iocon.P2_5 & 0b111) == kP2_5_PWM1_6);
+
+        Verify(Method(mock_mosi, EnableFastMode));
+        Verify(Method(mock_miso, EnableFastMode));
+        Verify(Method(mock_sck, EnableFastMode));
+        Verify(Method(mock_mosi, SetPinFunction).Using(Spi::kSpiFunction));
+        Verify(Method(mock_miso, SetPinFunction).Using(Spi::kSpiFunction));
+        Verify(Method(mock_sck, SetPinFunction).Using(Spi::kSpiFunction));
     }
 }
