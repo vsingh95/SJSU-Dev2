@@ -421,6 +421,9 @@ lint:
 tidy:
 	@$(CLANG_TIDY) -extra-arg=-std=c++17 $(LINT_FILES) -- -std=c++17 $(INCLUDES)
 
+tidy:
+	@$(CLANG_TIDY) -extra-arg=-std=c++17 $(LINT_FILES) -- -std=c++17 $(INCLUDES)
+
 presubmit:
 	@$(TOOLS)/presubmit.sh
 
