@@ -318,11 +318,7 @@ void InitFpu()
 
 SystemTimer system_timer;
 
-<<<<<<< HEAD
-void FreeRtosSystemTick()
-=======
 void InitializeFreeRTOSSystemTick()
->>>>>>> 82beb74f8cdc4a5b73eb9210a6b9de5709872d76
 {
     if (taskSCHEDULER_RUNNING == xTaskGetSchedulerState())
     {
@@ -331,16 +327,11 @@ void InitializeFreeRTOSSystemTick()
     }
 }
 
-<<<<<<< HEAD
-SJ2_WEAK void LowLevelInit()
-{
-    system_timer.SetIsrFunction(FreeRtosSystemTick);
-=======
+
 void SetupTimerInterrupt()
 {
     DEBUG_PRINT("Setting up SystemTick Timer...");
     system_timer.SetIsrFunction(InitializeFreeRTOSSystemTick);
->>>>>>> 82beb74f8cdc4a5b73eb9210a6b9de5709872d76
     system_timer.SetTickFrequency(config::kRtosFrequency);
     bool timer_started_successfully = system_timer.StartTimer();
     if (timer_started_successfully)

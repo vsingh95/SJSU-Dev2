@@ -1,61 +1,57 @@
 # Allow settiing a project name from the environment, default to firmware.
 # Only affects the name of the generated binary.
 # TODO(#82): Set this from the directory this makefile is stored in
-PROJ    ?= firmware
+PROJ	?= firmware
 # Affects what DBC is generated for SJSUOne board
-ENTITY  ?= DBG
+ENTITY	?= DBG
 
 # IMPORTANT: Be sure to source env.sh to access these via the PATH variable.
-DEVICE_CC      = arm-none-eabi-gcc
-DEVICE_CPPC    = arm-none-eabi-g++
-DEVICE_OBJDUMP = arm-none-eabi-objdump
-DEVICE_SIZEC   = arm-none-eabi-size
-DEVICE_OBJCOPY = arm-none-eabi-objcopy
-DEVICE_NM      = arm-none-eabi-nm
+DEVICE_CC		= arm-none-eabi-gcc
+DEVICE_CPPC		= arm-none-eabi-g++
+DEVICE_OBJDUMP	= arm-none-eabi-objdump
+DEVICE_SIZEC	= arm-none-eabi-size
+DEVICE_OBJCOPY	= arm-none-eabi-objcopy
+DEVICE_NM		= arm-none-eabi-nm
 # IMPORTANT: Must be accessible via the PATH variable!!!
-HOST_CC        ?= gcc-7
-HOST_CPPC      ?= g++-7
-HOST_OBJDUMP   ?= objdump-7
-HOST_SIZEC     ?= size-7
-HOST_OBJCOPY   ?= objcopy-7
-HOST_NM        ?= nm-7
+HOST_CC			?= gcc-7
+HOST_CPPC		?= g++-7
+HOST_OBJDUMP	?= objdump-7
+HOST_SIZEC		?= size-7
+HOST_OBJCOPY	?= objcopy-7
+HOST_NM			?= nm-7
 
 ifeq ($(MAKECMDGOALS), test)
-CC      = $(HOST_CC)
-CPPC    = $(HOST_CPPC)
-OBJDUMP = $(HOST_OBJDUMP)
-SIZEC   = $(HOST_SIZEC)
-OBJCOPY = $(HOST_OBJCOPY)
-NM      = $(HOST_NM)
+CC		= $(HOST_CC)
+CPPC	= $(HOST_CPPC)
+OBJDUMP	= $(HOST_OBJDUMP)
+SIZEC	= $(HOST_SIZEC)
+OBJCOPY	= $(HOST_OBJCOPY)
+NM		= $(HOST_NM)
 else
-CC      = $(DEVICE_CC)
-CPPC    = $(DEVICE_CPPC)
-OBJDUMP = $(DEVICE_OBJDUMP)
-SIZEC   = $(DEVICE_SIZEC)
-OBJCOPY = $(DEVICE_OBJCOPY)
-NM      = $(DEVICE_NM)
+CC		= $(DEVICE_CC)
+CPPC	= $(DEVICE_CPPC)
+OBJDUMP	= $(DEVICE_OBJDUMP)
+SIZEC	= $(DEVICE_SIZEC)
+OBJCOPY	= $(DEVICE_OBJCOPY)
+NM		= $(DEVICE_NM)
 endif
 
-UNAME_S := $(shell uname -s)
+UNAME_S	:= $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-<<<<<<< HEAD
-CLANG_TIDY   = clang-tidy
-=======
-CLANG_TIDY   = clang-tidy-6.0
->>>>>>> 82beb74f8cdc4a5b73eb9210a6b9de5709872d76
+CLANG_TIDY	= clang-tidy-6.0
 endif
 ifeq ($(UNAME_S),Darwin)
-CLANG_TIDY   = /usr/local/opt/llvm/bin/clang-tidy
+CLANG_TIDY	= /usr/local/opt/llvm/bin/clang-tidy
 endif
 
 # Internal build directories
-BUILD_DIR = build
+BUILD_DIR	=	build
 
-TEST_DIR  = $(BUILD_DIR)/test
+TEST_DIR	= $(BUILD_DIR)/test
 ifeq ($(MAKECMDGOALS), test)
-OBJ_DIR   = $(TEST_DIR)/compiled
+OBJ_DIR		= $(TEST_DIR)/compiled
 else
-OBJ_DIR   = $(BUILD_DIR)/compiled
+OBJ_DIR		= $(BUILD_DIR)/compiled
 endif
 BIN_DIR   = $(BUILD_DIR)/binaries
 DBC_DIR   = $(BUILD_DIR)/can-dbc
@@ -89,30 +85,15 @@ DEBUG     = -g
 WARNINGS_ARE_ERRORS ?=
 WARNINGS  = -Wall -Wextra -Wshadow -Wlogical-op -Wfloat-equal \
             -Wdouble-promotion -Wduplicated-cond -Wlogical-op -Wswitch \
-<<<<<<< HEAD
-            -Wnull-dereference -Wold-style-cast -Wuseless-cast -Wformat=2 \
-            -Wundef -Wconversion -Woverloaded-virtual -Wsuggest-final-types \
-            -Wsuggest-final-methods -Wsuggest-override $(WARNINGS_ARE_ERRORS)
-=======
             -Wnull-dereference -Wformat=2 \
             -Wundef -Wconversion -Wsuggest-final-types \
             -Wsuggest-final-methods $(WARNINGS_ARE_ERRORS)
 CPPWARNINGS = -Wold-style-cast -Woverloaded-virtual -Wsuggest-override \
               -Wuseless-cast $(WARNINGS_ARE_ERRORS)
->>>>>>> 82beb74f8cdc4a5b73eb9210a6b9de5709872d76
 DEFINES   = -DARM_MATH_CM4=1 -D__FPU_PRESENT=1U
 DISABLED_WARNINGS = -Wno-main -Wno-variadic-macros
 INCLUDES  = -I"$(CURRENT_DIRECTORY)/" \
 			-I"$(LIB_DIR)/" \
-<<<<<<< HEAD
-			-I"$(LIB_DIR)/newlib" \
-			-I"$(LIB_DIR)/third_party/" \
-			-I"$(LIB_DIR)/third_party/FreeRTOS" \
-			-I"$(LIB_DIR)/third_party/FreeRTOS/trace" \
-			-I"$(LIB_DIR)/third_party/FreeRTOS/include" \
-			-I"$(LIB_DIR)/third_party/FreeRTOS/portable" \
-			-I"$(LIB_DIR)/third_party/FreeRTOS/portable/no_mpu"
-=======
 			-isystem"$(LIB_DIR)/L0_LowLevel/SystemFiles" \
 			-isystem"$(LIB_DIR)/third_party/" \
 			-isystem"$(LIB_DIR)/third_party/FreeRTOS/Source" \
@@ -120,7 +101,6 @@ INCLUDES  = -I"$(CURRENT_DIRECTORY)/" \
 			-isystem"$(LIB_DIR)/third_party/FreeRTOS/Source/include" \
 			-isystem"$(LIB_DIR)/third_party/FreeRTOS/Source/portable" \
 			-isystem"$(LIB_DIR)/third_party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
->>>>>>> 82beb74f8cdc4a5b73eb9210a6b9de5709872d76
 COMMON_FLAGS = $(CORTEX_M4F) $(OPTIMIZE) $(DEBUG) $(WARNINGS)  $(DEFINES) \
                $(DISABLED_WARNINGS)
 
