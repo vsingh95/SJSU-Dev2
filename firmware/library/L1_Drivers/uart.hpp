@@ -12,18 +12,19 @@ class Uart_Interface
     virtual bool ReceiveData(char* char_input, uint32_t time_limit) = 0;
 };
 
-class Uart : public : Uart_Interface
+class Uart : public Uart_Interface
 {
  public:
+    LPC_UART_TypeDef UARTBaseReg;
+
+    // Can only be used for UART 0, 2, and 3
+    // Manually injected into UART1 and 4 cases
     void SetBaudRate(uint32_t baudrate) override
     {
-        uint32_t PCLK = 96000000;
-        // Setting the PCLK for now until we know
-        // what function is used to access it
         // LPC_SC -> PCLKSEL = 1;
         // Enable access to the divisor latches
         UARTBaseReg -> LCR |= (1 << 7);
-        uint16_t div = (PCLK / (16 * baudrate)) + 0.5;
+        uint16_t div = (kSystemClockRate / (16 * baudrate)) + 0.5;
         UARTBaseReg -> DLM = (div >> 8);
         UARTBaseReg -> DLL = (div >> 0);
         // Close off access to divisor latches,
@@ -52,6 +53,12 @@ class Uart : public : Uart_Interface
                 LPC_SC -> PCONP &= ~(1 << 3);
                 // Set power bit
                 LPC_SC -> PCONP |= (1 << 3);
+                // Reset bits 0, 1, 2, 6,and 7 in FCR register
+                UARTBaseReg -> FCR &= ~(7 << 0 | 3 << 6);
+                // Enable FIFO and set Rx trigger to have 1 char timeout
+                UARTBaseReg -> FCR = (1 << 0) | (0 << 6);
+                // Reset Rx and Tx FIFO
+                SetBaudRate(baud);
                 break;
             case 1:
                 // Configure Pins
@@ -63,12 +70,23 @@ class Uart : public : Uart_Interface
                 // for documentation on pin functions
                 Tx.SetPinFunction(2);
                 Rx.SetPinFunction(2);
-                // Set object to base address of UART1
-                UARTBaseReg = (unsigned int)LPC_UART1_BASE;
                 // 0 out power bit
                 LPC_SC -> PCONP &= ~(1 << 4);
                 // Set power bit
                 LPC_SC -> PCONP |= (1 << 4);
+                // Reset bits 0, 1, 2, 6,and 7 in FCR register
+                LPC_UART1 -> FCR &= ~(7 << 0 | 3 << 6);
+                // Enable FIFO and set Rx trigger to have 1 char timeout
+                LPC_UART1 -> FCR = (1 << 0) | (0 << 6);
+                // Reset Rx and Tx FIFO
+                // Enable access to the divisor latches
+                LPC_UART1 -> LCR |= (1 << 7);
+                uint16_t div = (kSystemClockRate / (16 * baudrate)) + 0.5;
+                LPC_UART1 -> DLM = (div >> 8);
+                LPC_UART1 -> DLL = (div >> 0);
+                // Close off access to divisor latches,
+                // enable 2 stop bit, and 8 bit wide word length
+                LPC_UART1 -> LCR |= (7 << 0);
                 break;
             case 2:
                 // Configure Pins
@@ -86,6 +104,12 @@ class Uart : public : Uart_Interface
                 LPC_SC -> PCONP &= ~(1 << 24);
                 // Set power bit
                 LPC_SC -> PCONP |= (1 << 24);
+                // Reset bits 0, 1, 2, 6,and 7 in FCR register
+                UARTBaseReg -> FCR &= ~(7 << 0 | 3 << 6);
+                // Enable FIFO and set Rx trigger to have 1 char timeout
+                UARTBaseReg -> FCR = (1 << 0) | (0 << 6);
+                // Reset Rx and Tx FIFO
+                SetBaudRate(baud);
                 break;
             case 3:
                 // Configure Pins
@@ -103,6 +127,12 @@ class Uart : public : Uart_Interface
                 LPC_SC -> PCONP &= ~(1 << 25);
                 // Set power bit
                 LPC_SC -> PCONP |= (1 << 25);
+                // Reset bits 0, 1, 2, 6,and 7 in FCR register
+                UARTBaseReg -> FCR &= ~(7 << 0 | 3 << 6);
+                // Enable FIFO and set Rx trigger to have 1 char timeout
+                UARTBaseReg -> FCR = (1 << 0) | (0 << 6);
+                // Reset Rx and Tx FIFO
+                SetBaudRate(baud);
                 break;
             case 4:
                 // Configure Pins
@@ -114,22 +144,27 @@ class Uart : public : Uart_Interface
                 // for documentation on pin functions
                 Tx.SetPinFunction(5);
                 Rx.SetPinFunction(3);
-                // Set object to base address of UART4
-                UARTBaseReg = (unsigned int)LPC_UART4_BASE;
                 // 0 out power bit
                 LPC_SC -> PCONP &= ~(1 << 8);
                 // Set power bit
                 LPC_SC -> PCONP |= (1 << 8);
+                // Reset bits 0, 1, 2, 6,and 7 in FCR register
+                LPC_UART4 -> FCR &= ~(7 << 0 | 3 << 6);
+                // Enable FIFO and set Rx trigger to have 1 char timeout
+                LPC_UART4 -> FCR = (1 << 0) | (0 << 6);
+                // Reset Rx and Tx FIFO
+                // Enable access to the divisor latches
+                LPC_UART4 -> LCR |= (1 << 7);
+                uint16_t div = (kSystemClockRate / (16 * baudrate)) + 0.5;
+                LPC_UART4 -> DLM = (div >> 8);
+                LPC_UART4 -> DLL = (div >> 0);
+                // Close off access to divisor latches,
+                // enable 2 stop bit, and 8 bit wide word length
+                LPC_UART4 -> LCR |= (7 << 0);
                 break;
             default:
                 return false;
         }
-        SetBaudRate(baud);
-        // Reset bits 0, 1, 2, 6,and 7 in FCR register
-        UARTBaseReg -> FCR &= ~(7 << 0 | 3 << 6);
-        // Enable FIFO and set Rx trigger to have 1 char timeout
-        UARTBaseReg -> FCR = (1 << 0) | (0 << 6);
-        // Reset Rx and Tx FIFO
     }
     void Send(char out, uint32_t time_limit)
     {
