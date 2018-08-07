@@ -5,8 +5,10 @@
 
 #include "L0_LowLevel/LPC40xx.h"
 #include "L2_Utilities/debug_print.hpp"
+#include "L1_Drivers/uart.hpp"
 
 volatile uint32_t cycles = 500'000;
+
 
 int main(void)
 {
@@ -18,21 +20,36 @@ int main(void)
          "================================== SJTwo Booted! "
          "==================================\n" SJ2_COLOR_RESET, stdout);
     DEBUG_PRINT("Initializing LEDs...");
-    LPC_IOCON->P1_1 &= ~(0b111);
-    LPC_IOCON->P1_8 &= ~(0b111);
-    LPC_GPIO1->DIR |= (1 << 1);
-    LPC_GPIO1->PIN &= ~(1 << 1);
-    LPC_GPIO1->DIR |= (1 << 8);
-    LPC_GPIO1->PIN |= (1 << 8);
-    DEBUG_PRINT("LEDs Initialized...");
-    fputs("Enter wait cycles for led animation: ", stdout);
-    scanf("%lu", &cycles);
-    DEBUG_PRINT("Toggling LEDs...");
-
-    while (1)
+    
+    // -------------------------------------------------------------------
+    char * receive;    
+    Uart test;
+    char input;
+    // Set to use UART 2
+    // Look at what pins are gonna be used
+    DEBUG_PRINT("Initializing UART");
+    if(test.Initialize(9600, 2) == 0)
     {
-        for (uint32_t i = 0; i < cycles; i++) { continue; }
-        LPC_GPIO1->PIN ^= 0b0001'0000'0010;
+        printf("Fail!");
+    }
+    DEBUG_PRINT("Char Input");
+    while(1)
+    {
+        printf("Input a letter\n");
+        scanf("%c", &input);
+        test.Send(input, 20);
+
+        if(!test.Receive(receive, 30))
+        {
+            printf("Fail!");
+        }
+        else
+            printf(receive);
+        // Delay
+        for(int i = 0; i < 1000; i++)
+        {
+
+        }
     }
     return 0;
 }
