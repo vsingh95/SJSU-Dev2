@@ -3,7 +3,7 @@
 #include <cstdint>
 
 
-#include "library/config.hpp"
+#include "config.hpp"
 #include "L1_Drivers/pin_configure.hpp"
 
 class Uart_Interface
@@ -25,6 +25,9 @@ class Uart : public Uart_Interface
     // Manually injected into UART1 and 4 cases
     void SetBaudRate(uint32_t baudrate) override
     {
+
+    uint32_t kSystemClockRate = 12000000;
+
         if(UARTBaseReg1 == (LPC_UART1_TypeDef *)LPC_UART1_BASE)
         {
             // LPC_SC -> PCLKSEL = 1;
@@ -65,12 +68,14 @@ class Uart : public Uart_Interface
     }
     bool Initialize(uint32_t baud, uint32_t mode) override
     {
+    uint32_t kSystemClockRate = 12000000;
+    
         // Power up and enable the appropriate UART,
         // configure pins, and NVIC Interrupt
         switch (mode)
         {
             case 0:
-                // Configure Pins
+            {    // Configure Pins
                 PinConfigure Tx(0, 2);
                 Tx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
                 PinConfigure Rx(0, 3);
@@ -92,8 +97,9 @@ class Uart : public Uart_Interface
                 // Reset Rx and Tx FIFO
                 SetBaudRate(baud);
                 break;
+            }
             case 1:
-                // Configure Pins
+            {   // Configure Pins
                 PinConfigure Tx(2, 0);
                 Tx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
                 PinConfigure Rx(2, 1);
@@ -114,15 +120,16 @@ class Uart : public Uart_Interface
                 // Reset Rx and Tx FIFO
                 // Enable access to the divisor latches
                 UARTBaseReg1 -> LCR |= (1 << 7);
-                uint16_t div = (kSystemClockRate / (16 * baudrate)) + 0.5;
+                uint16_t div = (kSystemClockRate / (16 * baud)) + 0.5;
                 UARTBaseReg1 -> DLM = (div >> 8);
                 UARTBaseReg1 -> DLL = (div >> 0);
                 // Close off access to divisor latches,
                 // enable 2 stop bit, and 8 bit wide word length
                 UARTBaseReg1 -> LCR |= (7 << 0);
                 break;
+            }
             case 2:
-                // Configure Pins
+            {   // Configure Pins
                 PinConfigure Tx(2, 8);
                 Tx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
                 PinConfigure Rx(2, 9);
@@ -144,8 +151,9 @@ class Uart : public Uart_Interface
                 // Reset Rx and Tx FIFO
                 SetBaudRate(baud);
                 break;
+            }
             case 3:
-                // Configure Pins
+            {   // Configure Pins
                 PinConfigure Tx(4, 28);
                 Tx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
                 PinConfigure Rx(4, 29);
@@ -167,8 +175,9 @@ class Uart : public Uart_Interface
                 // Reset Rx and Tx FIFO
                 SetBaudRate(baud);
                 break;
+            }
             case 4:
-                // Configure Pins
+            {    // Configure Pins
                 PinConfigure Tx(1, 29);
                 Tx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
                 PinConfigure Rx(2, 9);
@@ -190,13 +199,14 @@ class Uart : public Uart_Interface
                 // Reset Rx and Tx FIFO
                 // Enable access to the divisor latches
                 UARTBaseReg4 -> LCR |= (1 << 7);
-                uint16_t div = (kSystemClockRate / (16 * baudrate)) + 0.5;
+                uint16_t div = (kSystemClockRate / (16 * baud)) + 0.5;
                 UARTBaseReg4 -> DLM = (div >> 8);
                 UARTBaseReg4 -> DLL = (div >> 0);
                 // Close off access to divisor latches,
                 // enable 2 stop bit, and 8 bit wide word length
                 UARTBaseReg4 -> LCR |= (7 << 0);
                 break;
+            }
             default:
                 return false;
         }
