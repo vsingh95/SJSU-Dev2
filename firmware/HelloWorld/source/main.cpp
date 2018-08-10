@@ -22,29 +22,30 @@ int main(void)
     DEBUG_PRINT("Initializing LEDs...");
     
     // -------------------------------------------------------------------
-    char * receive;    
+    char receive;    
     Uart test;
-    char input;
+    char input = 'A';
     // Set to use UART 2
     // Look at what pins are gonna be used
     DEBUG_PRINT("Initializing UART");
-    if(test.Initialize(9600, 2) == 0)
+    if(test.Init(9600) == 0)
     {
         printf("Fail!");
     }
     DEBUG_PRINT("Char Input");
     while(1)
     {
-        printf("Input a letter\n");
-        scanf("%c", &input);
-        test.Send(input, 20);
+        //printf("Input a letter\n");
+        //scanf("%c", &input);
+        test.Send(input);
 
-        if(!test.Receive(receive, 30))
+        if(!test.Reci())
         {
             printf("Fail!");
         }
         else
-            printf(receive);
+            printf("%c",receive);
+        
         // Delay
         for(int i = 0; i < 1000; i++)
         {

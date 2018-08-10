@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "LPC40xx.h"
+#include "L0_LowLevel/LPC40xx.h"
 #include "L1_Drivers/pin_configure.hpp"
 
 
@@ -20,6 +20,8 @@ public:
     LPC_UART_TypeDef * UARTBaseReg;
     bool Init (uint32_t baud) override
     {
+        uint32_t kSystemClockRate = 12000000;
+
         UARTBaseReg = (LPC_UART_TypeDef *)LPC_UART2_BASE;
 
         // Set Power bit
