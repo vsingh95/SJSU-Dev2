@@ -6,25 +6,30 @@
 #include "L0_LowLevel/LPC40xx.h"
 #include "L0_LowLevel/delay.hpp"
 #include "L2_Utilities/debug_print.hpp"
-#include "L1_Drivers/uart2.hpp"
+#include "L1_Drivers/uart.hpp"
 
 int main(void)
 {
     
     Uart test;
-    char receive, input = 'A';
+    char receive;
+    // char input [] = {'H', 'e', 'l', 'l', 'o', '!','\0'};
+    char input2 [] = "Varinder S Singh!";
 
-    if(test.Init(38400) == 0)
+    if(test.Init(38400, 4) == 0)
     {
         printf("Fail!");
     }
 
     while(1)
     {
-        test.Send(input);
-        receive = test.Reci();
-        printf("Sent: %c Recieved: %c \n", input, receive);
-        Delay(500);    
+        for( int i=0; input2[i] != '\0'; i++) test.Send(input2[i]);
+        for( int j=0; input2[j] != '\0'; j++) 
+        {
+            receive = test.Reci();
+            printf("%c",receive);
+        } 
+            printf("\n");
     }
     return 0;
 }

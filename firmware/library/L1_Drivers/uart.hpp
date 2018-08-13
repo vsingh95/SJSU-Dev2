@@ -2,322 +2,259 @@
 
 #include <cstdint>
 
-
-#include "config.hpp"
+#include "L0_LowLevel/LPC40xx.h"
+#include "L0_LowLevel/SystemFiles/system_LPC407x_8x_177x_8x.h"
 #include "L1_Drivers/pin_configure.hpp"
 
-class Uart_Interface
+
+class Uart_interface
 {
-    virtual void SetBaudRate(uint32_t baudrate) = 0;
-    virtual bool Initialize(uint32_t baud, uint32_t mode) = 0;
-    virtual void Send(char out, uint32_t time_limit) = 0;
-    virtual bool Receive(char * char_input, uint32_t time_limit) = 0;
+    virtual void SetBaud (uint32_t baud) = 0;
+    virtual bool Init (uint32_t baud, uint32_t mode) = 0;
+    virtual void Send (char out) = 0;
+    virtual char Reci () = 0;
 };
 
-class Uart : public Uart_Interface
+class Uart : public Uart_interface
 {
- public:
+public:
     LPC_UART_TypeDef * UARTBaseReg;
     LPC_UART1_TypeDef * UARTBaseReg1;
     LPC_UART4_TypeDef * UARTBaseReg4;
-
-    // Can only be used for UART 0, 2, and 3
-    // Manually injected into UART1 and 4 cases
-    void SetBaudRate(uint32_t baudrate) override
+    
+    void SetBaud(uint32_t baud) override
     {
-
-    uint32_t kSystemClockRate = 12000000;
-
         if(UARTBaseReg1 == (LPC_UART1_TypeDef *)LPC_UART1_BASE)
         {
-            // LPC_SC -> PCLKSEL = 1;
-            // Enable access to the divisor latches
+            float baudrate = static_cast<float>(baud);
+
+            // Set baud rate
             UARTBaseReg1 -> LCR |= (1 << 7);
-            uint16_t div = (kSystemClockRate / (16 * baudrate)) + 0.5;
-            UARTBaseReg1 -> DLM = (div >> 8);
-            UARTBaseReg1 -> DLL = (div >> 0);
-            // Close off access to divisor latches,
-            // enable 2 stop bit, and 8 bit wide word length
-            UARTBaseReg1 -> LCR |= (7 << 0);
+            uint32_t div = static_cast<uint32_t>(OSC_CLK / (16.0f * baudrate) + 0.5f);
+            UARTBaseReg1 -> DLM = static_cast<uint8_t>(div >> 8);
+            UARTBaseReg1 -> DLL = static_cast<uint8_t>(div >> 0);
+            UARTBaseReg1 -> LCR = 3; 
+
         }
         else if(UARTBaseReg4 == (LPC_UART4_TypeDef *)LPC_UART4_BASE)
         {
-            // LPC_SC -> PCLKSEL = 1;
-            // Enable access to the divisor latches
-            UARTBaseReg -> LCR |= (1 << 7);
-            uint16_t div = (kSystemClockRate / (16 * baudrate)) + 0.5;
-            UARTBaseReg -> DLM = (div >> 8);
-            UARTBaseReg -> DLL = (div >> 0);
-            // Close off access to divisor latches,
-            // enable 2 stop bit, and 8 bit wide word length
-            UARTBaseReg -> LCR |= (7 << 0);
+            float baudrate = static_cast<float>(baud);
+
+            // Set baud rate
+            UARTBaseReg4 -> LCR |= (1 << 7);
+            uint32_t div = static_cast<uint32_t>(OSC_CLK / (16.0f * baudrate) + 0.5f);
+            UARTBaseReg4 -> DLM = static_cast<uint8_t>(div >> 8);
+            UARTBaseReg4 -> DLL = static_cast<uint8_t>(div >> 0);
+            UARTBaseReg4 -> LCR = 3; 
         }
         else
         {
-            // LPC_SC -> PCLKSEL = 1;
-            // Enable access to the divisor latches
-            UARTBaseReg -> LCR |= (1 << 7);
-            uint16_t div = (kSystemClockRate / (16 * baudrate)) + 0.5;
-            UARTBaseReg -> DLM = (div >> 8);
-            UARTBaseReg -> DLL = (div >> 0);
-            // Close off access to divisor latches,
-            // enable 2 stop bit, and 8 bit wide word length
-            UARTBaseReg -> LCR |= (7 << 0);
-        }
+            float baudrate = static_cast<float>(baud);
 
+            // Set baud rate
+            UARTBaseReg -> LCR |= (1 << 7);
+            uint32_t div = static_cast<uint32_t>(OSC_CLK / (16.0f * baudrate) + 0.5f);
+            UARTBaseReg -> DLM = static_cast<uint8_t>(div >> 8);
+            UARTBaseReg -> DLL = static_cast<uint8_t>(div >> 0);
+            UARTBaseReg -> LCR = 3; 
+        }
     }
-    bool Initialize(uint32_t baud, uint32_t mode) override
+
+    bool Init (uint32_t baud, uint32_t mode) override
     {
-    uint32_t kSystemClockRate = 12000000;
-    
-        // Power up and enable the appropriate UART,
-        // configure pins, and NVIC Interrupt
-        switch (mode)
+        switch(mode)
         {
             case 0:
-            {    // Configure Pins
-                PinConfigure Tx(0, 2);
-                Tx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
-                PinConfigure Rx(0, 3);
-                Rx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
-                // Check pages starting at 133
-                // for documentation on pin functions
-                Tx.SetPinFunction(4);
-                Rx.SetPinFunction(4);
-                // Set object to base address of UART0
+            {
                 UARTBaseReg = (LPC_UART_TypeDef *)LPC_UART0_BASE;
-                // 0 out power bit
-                LPC_SC -> PCONP &= ~(1 << 3);
-                // Set power bit
-                LPC_SC -> PCONP |= (1 << 3);
-                // Reset bits 0, 1, 2, 6,and 7 in FCR register
-                UARTBaseReg -> FCR &= ~(7 << 0 | 3 << 6);
-                // Enable FIFO and set Rx trigger to have 1 char timeout
-                UARTBaseReg -> FCR = (1 << 0) | (0 << 6);
-                // Reset Rx and Tx FIFO
-                SetBaudRate(baud);
-                break;
+                
+                // Set Power bit
+                LPC_SC->PCONP &= ~(1 << 3);
+                LPC_SC->PCONP |= (1 << 3);
+
+                // Tx object created
+                PinConfigure Tx = PinConfigure::CreatePinConfigure<0, 0>();
+                Tx.SetPinMode(PinConfigureInterface::PinMode::kPullUp);
+
+                PinConfigure Rx = PinConfigure::CreatePinConfigure<0, 1>();
+                Rx.SetPinMode(PinConfigureInterface::PinMode::kPullUp);
+                // Will be using pins 0_2(Tx) and 0_3(Rx) for the final version
+
+                // CHeck page 134 for function page
+                Tx.SetPinFunction(0b100);
+                Rx.SetPinFunction(0b100);
+
+                SetBaud(baud);
+
+                // Uart FIFO
+                UARTBaseReg->FCR |= (1 << 0);
+                UARTBaseReg->FCR |= (1 << 1);
+                UARTBaseReg->FCR |= (1 << 2);
+
+                return true;
             }
             case 1:
-            {   // Configure Pins
-                PinConfigure Tx(2, 0);
-                Tx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
-                PinConfigure Rx(2, 1);
-                Rx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
-                // Check pages starting at 133
-                // for documentation on pin functions
-                Tx.SetPinFunction(2);
-                Rx.SetPinFunction(2);
+            {
                 UARTBaseReg1 = (LPC_UART1_TypeDef *)LPC_UART1_BASE;
-                // 0 out power bit
-                LPC_SC -> PCONP &= ~(1 << 4);
-                // Set power bit
-                LPC_SC -> PCONP |= (1 << 4);
-                // Reset bits 0, 1, 2, 6,and 7 in FCR register
-                UARTBaseReg1 -> FCR &= ~(7 << 0 | 3 << 6);
-                // Enable FIFO and set Rx trigger to have 1 char timeout
-                UARTBaseReg1 -> FCR = (1 << 0) | (0 << 6);
-                // Reset Rx and Tx FIFO
-                // Enable access to the divisor latches
-                UARTBaseReg1 -> LCR |= (1 << 7);
-                uint16_t div = (kSystemClockRate / (16 * baud)) + 0.5;
-                UARTBaseReg1 -> DLM = (div >> 8);
-                UARTBaseReg1 -> DLL = (div >> 0);
-                // Close off access to divisor latches,
-                // enable 2 stop bit, and 8 bit wide word length
-                UARTBaseReg1 -> LCR |= (7 << 0);
-                break;
+                
+                // Set Power bit
+                LPC_SC->PCONP &= ~(1 << 4);
+                LPC_SC->PCONP |= (1 << 4);
+
+                // Tx object created
+                PinConfigure Tx = PinConfigure::CreatePinConfigure<2, 0>();
+                Tx.SetPinMode(PinConfigureInterface::PinMode::kPullUp);
+
+                PinConfigure Rx = PinConfigure::CreatePinConfigure<2, 1>();
+                Rx.SetPinMode(PinConfigureInterface::PinMode::kPullUp);
+
+                // Check page 134 for function page
+                Tx.SetPinFunction(0b010);
+                Rx.SetPinFunction(0b010);
+
+                SetBaud(baud);
+
+                // Uart FIFO
+                UARTBaseReg1->FCR |= (1 << 0);
+                UARTBaseReg1->FCR |= (1 << 1);
+                UARTBaseReg1->FCR |= (1 << 2);
+
+                return true;
             }
             case 2:
-            {   // Configure Pins
-                PinConfigure Tx(2, 8);
-                Tx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
-                PinConfigure Rx(2, 9);
-                Rx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
-                // Check pages starting at 133
-                // for documentation on pin functions
-                Tx.SetPinFunction(2);
-                Rx.SetPinFunction(2);
-                // Set object to base address of UART2
+            {
                 UARTBaseReg = (LPC_UART_TypeDef *)LPC_UART2_BASE;
-                // 0 out power bit
-                LPC_SC -> PCONP &= ~(1 << 24);
-                // Set power bit
-                LPC_SC -> PCONP |= (1 << 24);
-                // Reset bits 0, 1, 2, 6,and 7 in FCR register
-                UARTBaseReg -> FCR &= ~(7 << 0 | 3 << 6);
-                // Enable FIFO and set Rx trigger to have 1 char timeout
-                UARTBaseReg -> FCR = (1 << 0) | (0 << 6);
-                // Reset Rx and Tx FIFO
-                SetBaudRate(baud);
-                break;
+                
+                // Set Power bit
+                LPC_SC->PCONP &= ~(1 << 24);
+                LPC_SC->PCONP |= (1 << 24);
+
+                // Tx object created
+                PinConfigure Tx = PinConfigure::CreatePinConfigure<2, 8>();
+                //PinConfigure Tx(2,8);
+                Tx.SetPinMode(PinConfigureInterface::PinMode::kPullUp);
+
+                PinConfigure Rx = PinConfigure::CreatePinConfigure<2, 9>();
+                Rx.SetPinMode(PinConfigureInterface::PinMode::kPullUp);
+
+                // CHeck page 134 for function page
+                Tx.SetPinFunction(0b010);
+                Rx.SetPinFunction(0b010);
+
+                SetBaud(baud);
+
+                // Uart FIFO
+                UARTBaseReg->FCR |= (1 << 0);
+                UARTBaseReg->FCR |= (1 << 1);
+                UARTBaseReg->FCR |= (1 << 2);
+
+                return true;
             }
             case 3:
-            {   // Configure Pins
-                PinConfigure Tx(4, 28);
-                Tx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
-                PinConfigure Rx(4, 29);
-                Rx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
-                // Check pages starting at 133
-                // for documentation on pin functions
-                Tx.SetPinFunction(2);
-                Rx.SetPinFunction(2);
-                // Set object to base address of UART3
+            {
                 UARTBaseReg = (LPC_UART_TypeDef *)LPC_UART3_BASE;
-                // 0 out power bit
-                LPC_SC -> PCONP &= ~(1 << 25);
-                // Set power bit
-                LPC_SC -> PCONP |= (1 << 25);
-                // Reset bits 0, 1, 2, 6,and 7 in FCR register
-                UARTBaseReg -> FCR &= ~(7 << 0 | 3 << 6);
-                // Enable FIFO and set Rx trigger to have 1 char timeout
-                UARTBaseReg -> FCR = (1 << 0) | (0 << 6);
-                // Reset Rx and Tx FIFO
-                SetBaudRate(baud);
-                break;
+                
+                // Set Power bit
+                LPC_SC->PCONP &= ~(1 << 25);
+                LPC_SC->PCONP |= (1 << 25);
+
+                // Tx object created
+                PinConfigure Tx = PinConfigure::CreatePinConfigure<4, 28>();
+                //PinConfigure Tx(2,8);
+                Tx.SetPinMode(PinConfigureInterface::PinMode::kPullUp);
+
+                PinConfigure Rx = PinConfigure::CreatePinConfigure<4, 29>();
+                Rx.SetPinMode(PinConfigureInterface::PinMode::kPullUp);
+
+                // CHeck page 134 for function page
+                Tx.SetPinFunction(0b010);
+                Rx.SetPinFunction(0b010);
+
+                SetBaud(baud);
+
+                // Uart FIFO
+                UARTBaseReg->FCR |= (1 << 0);
+                UARTBaseReg->FCR |= (1 << 1);
+                UARTBaseReg->FCR |= (1 << 2);
+
+                return true;
             }
             case 4:
-            {    // Configure Pins
-                PinConfigure Tx(1, 29);
-                Tx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
-                PinConfigure Rx(2, 9);
-                Rx.SetPinMode(PinConfigureInterface::PinMode::kInactive);
-                // Check pages starting at 133
-                // for documentation on pin functions
-                Tx.SetPinFunction(5);
-                Rx.SetPinFunction(3);
-                // Set object to base address
+            {
                 UARTBaseReg4 = (LPC_UART4_TypeDef *)LPC_UART4_BASE;
-                // 0 out power bit
-                LPC_SC -> PCONP &= ~(1 << 8);
-                // Set power bit
-                LPC_SC -> PCONP |= (1 << 8);
-                // Reset bits 0, 1, 2, 6,and 7 in FCR register
-                UARTBaseReg4 -> FCR &= ~(7 << 0 | 3 << 6);
-                // Enable FIFO and set Rx trigger to have 1 char timeout
-                UARTBaseReg4 -> FCR = (1 << 0) | (0 << 6);
-                // Reset Rx and Tx FIFO
-                // Enable access to the divisor latches
-                UARTBaseReg4 -> LCR |= (1 << 7);
-                uint16_t div = (kSystemClockRate / (16 * baud)) + 0.5;
-                UARTBaseReg4 -> DLM = (div >> 8);
-                UARTBaseReg4 -> DLL = (div >> 0);
-                // Close off access to divisor latches,
-                // enable 2 stop bit, and 8 bit wide word length
-                UARTBaseReg4 -> LCR |= (7 << 0);
-                break;
+                
+                // Set Power bit
+                LPC_SC->PCONP &= ~(1 << 8);
+                LPC_SC->PCONP |= (1 << 8);
+
+                // PinConfigure Tx(1,29);
+                PinConfigure Tx = PinConfigure::CreatePinConfigure<1, 29>();
+                Tx.SetPinMode(PinConfigureInterface::PinMode::kPullUp);
+
+                // PinConfigure Rx(2,9);
+                PinConfigure Rx = PinConfigure::CreatePinConfigure<2, 9>();
+                Rx.SetPinMode(PinConfigureInterface::PinMode::kPullUp);
+
+                // CHeck page 134 for function page
+                Tx.SetPinFunction(0b101);
+                Rx.SetPinFunction(0b011);
+
+                SetBaud(baud);
+    
+                // Uart FIFO
+                UARTBaseReg4->FCR |= (1 << 0);
+                UARTBaseReg4->FCR |= (1 << 1);
+                UARTBaseReg4->FCR |= (1 << 2);
+
+                return true;
             }
             default:
+            {
                 return false;
+            }
         }
     }
-    void Send(char out, uint32_t time_limit) override
+
+    void Send (char out) override
     {
-        uint32_t i = 0;
         if(UARTBaseReg1 == (LPC_UART1_TypeDef *)LPC_UART1_BASE)
         {
-            // Load up the register
-            UARTBaseReg1 -> THR = out;
-            // Send out the data
-            while (time_limit > i)
-            {
-                if (UARTBaseReg1 -> LSR & (1 << 5)) {break;}
-                else
-                {
-                    i++;
-                }
-            }
+            UARTBaseReg1->THR = out;
+            while(! (UARTBaseReg1->LSR & (1 << 5)));
         }
         else if(UARTBaseReg4 == (LPC_UART4_TypeDef *)LPC_UART4_BASE)
         {
-            // Load up the register
-            UARTBaseReg4 -> THR = out;
-            // Send out the data
-            while (time_limit > i)
-            {
-                if (UARTBaseReg4 -> LSR & (1 << 5)) {break;}
-                else
-                {
-                    i++;
-                }
-            }
+            UARTBaseReg4->THR = out;
+            while(! (UARTBaseReg4->LSR & (1 << 5)));
         }
         else
         {
-            // Load up the register
-            UARTBaseReg -> THR = out;
-            // Send out the data
-            while (time_limit > i)
-            {
-                if (UARTBaseReg -> LSR & (1 << 5)) {break;}
-                else
-                {
-                    i++;
-                }
-            }
+            UARTBaseReg->THR = out;
+            while(! (UARTBaseReg->LSR & (1 << 5)));
         }
-
-
     }
-    bool Receive(char * char_input, uint32_t time_limit) override
+
+    char Reci () override
     {
-        if (!char_input){return false;}
+        char mychar;
+        if(UARTBaseReg1 == (LPC_UART1_TypeDef *)LPC_UART1_BASE)
+        {
+            while(!(UARTBaseReg1->LSR & (1 << 0)));
+            mychar = static_cast<char>(UARTBaseReg1->RBR);
+            return mychar;
+        }
+        else if(UARTBaseReg4 == (LPC_UART4_TypeDef *)LPC_UART4_BASE)
+        {
+            while(!(UARTBaseReg4->LSR & (1 << 0)));
+            mychar = static_cast<char>(UARTBaseReg4->RBR);
+            return mychar;
+        }
         else
         {
-            uint32_t i = 0;
-            if(UARTBaseReg1 == (LPC_UART1_TypeDef *)LPC_UART1_BASE)
-            {    
-           // Checks if the input buffer was created
-    
-
-               while (time_limit > i)
-               {
-                   if (UARTBaseReg1 -> LSR & (1 << 0)) {break;}
-                   else
-                   {
-                       i++;
-                   }
-               }
-               char_input = (char *)UARTBaseReg1 -> RBR;
-               return true;
-            }
-            else if(UARTBaseReg4 == (LPC_UART4_TypeDef *)LPC_UART4_BASE)
-            {    
-               // Checks if the input buffer was created
-               while (time_limit > i)
-               {
-                   if (UARTBaseReg4 -> LSR & (1 << 0)) {break;}
-                   else
-                   {
-                       i++;
-                   }
-               }
-               char_input = (char *)UARTBaseReg4 -> RBR;
-               return true;
-            }
-            else
-            {    
-               // Checks if the input buffer was created
-               while (time_limit > i)
-               {
-                   if (UARTBaseReg -> LSR & (1 << 0)) {break;}
-                   else
-                   {
-                       i++;
-                   }
-               }
-               char_input = (char*)UARTBaseReg -> RBR;
-               return true;
-            }
-
-       }
-    }
-    Uart()
-    {
-        // Empty
-    }
-    ~Uart()
-    {
-
+            while(!(UARTBaseReg->LSR & (1 << 0)));
+            mychar = static_cast<char>(UARTBaseReg->RBR);
+            return mychar;
+        }
+        return 0;
     }
 };
