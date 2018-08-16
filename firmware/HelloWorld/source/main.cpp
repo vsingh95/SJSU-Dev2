@@ -3,37 +3,47 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "L0_LowLevel/LPC40xx.h"
-#include "L0_LowLevel/delay.hpp"
-#include "L2_Utilities/debug_print.hpp"
-#include "L1_Drivers/uart.hpp"
+#include <L0_LowLevel/LPC40xx.h>
+#include <L0_LowLevel/delay.hpp>
+#include <L2_Utilities/debug_print.hpp>
+#include <L1_Drivers/uart.hpp>
+
+
+void Initialize_LCD_Screen( char message[], uint32_t baud, uint32_t mode);
 
 int main(void)
 {
-    
-    Uart test;
-    char receive;
-    // char input [] = {'H', 'e', 'l', 'l', 'o', '!','\0'};
-    char input2 [] = "Varinder S Singh!";
 
-    if(test.Init(9600, 4) == 0)
+    char message[] = "Welcome to SJSU-Dev2 Expo!";
+    Initialize_LCD_Screen(message,9600,4);
+    Delay(500);
+
+    return 0;
+}
+
+void Initialize_LCD_Screen(char message[], uint32_t baud, uint32_t mode)
+{
+    Uart test;
+
+    if (test.Initialize(baud, mode) == 1)
     {
         printf("Fail!");
     }
+    Delay(100);
 
-    while(1)
-    {
-        printf("Please type here; character length is set to 17:\n");
-        scanf("%s", input2);
+    test.Send(0x15);
+    Delay(100);
 
-        for( int i=0; input2[i] != '\0'; i++) test.Send(input2[i]);
-        for( int j=0; input2[j] != '\0'; j++) 
-        {
-            receive = test.Reci();
-            printf("%c \n",receive);
-        } 
+    test.Send(0x16);
+    Delay(100);
 
-    }
+    test.Send(0x11);
+    Delay(100);
 
-    return 0;
+    // Clear LCD screen
+    test.Send(0x0C);
+    Delay(100);
+
+    for ( int i=0; message[i] != '\0'; i++) test.Send(static_cast<uint32_t> (message[i]));
+
 }
